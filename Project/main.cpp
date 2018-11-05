@@ -10,7 +10,7 @@
 
 
 /*
-Get as much pokeman as one can in a weekend
+I hope for this to be a randomly genrated pokeman-like game
 */
 SDL_Renderer* ren;
 SDL_Window* win;
@@ -99,7 +99,7 @@ void clean()
 void game_loop()
 {
 	init();
-	//instantiate
+	//instantiate main game object
 	gam = new GameMan(ren);
 
 	while (gam->control->running)
