@@ -41,8 +41,8 @@ Mapping::Mapping(SDL_Renderer* r)
 	//init textures
 	//I'll need  function to cut through the new sprite sheets
 	emp_tx = IMG_LoadTexture(r, "assets/wall32.png");
-	blk_tx = IMG_LoadTexture(r, "assets/grass32.png");
-	wld_tx = IMG_LoadTexture(r, "assets/water32.png");
+	blk_tx = IMG_LoadTexture(r, "assets/water32.png");
+	wld_tx = IMG_LoadTexture(r, "assets/grass32.png");
 }
 
 
@@ -128,6 +128,9 @@ void Mapping::random_tiles_row()
 		if (random_int > 60)
 			row.push_back(Wild);		
 	}
+	//make a wall on the left and right sides
+	row[0] = Block;
+	row[row.size() - 2] = Block;
 	//push that new row to the map
 	mTiles.push_back(row);
 }
@@ -247,6 +250,10 @@ void Mapping::move_row_offscreen(bool upward)
 		if (random_int > 60)
 			row.push_back(Wild);
 	}
+	//make a wall on the left and right sides
+	row[0] = Block;
+	row[row.size() - 1] = Block;
+	row[row.size() - 2] = Block;
 
 	//both of these should keep the capacity from reallocating because they reduce the size first then add an element
 	//if upward pop the back and insert the new row
@@ -256,6 +263,8 @@ void Mapping::move_row_offscreen(bool upward)
 		mTiles.pop_back();
 		//insert the new row at the front
 		mTiles.insert(mTiles.begin(), row);
+		//increment onedirection
+		one_direction++;
 	}
 	//if downward, remove the first row and push the new row to the back
 	else
@@ -264,28 +273,15 @@ void Mapping::move_row_offscreen(bool upward)
 		mTiles.erase(mTiles.begin());
 		//push new row to the back
 		mTiles.push_back(row);
+		//decrement onedirection
+		one_direction--;
 	}
 }
-//function to return whats in storage
-void Mapping::replace_column()
-{
-	//if storage is empty then thers no need to run
-	if (!storage.empty())
-	{
-		//index
-		int i = 0;
-		std::vector<TileType> column = storage.back();
-		storage.pop_back();
-		//loop through the map
-		for (auto vec : mTiles)
-		{
-			mTiles[i][0] = column[i];
-			i++;
-		}
-	}
-}
+
 void Mapping::move_column_offscreen(bool leftward)
 {
+	//keep the previous movement int so we have something to compare to 
+	previous_lr_movement = left_right_movement;
 	//row for inserting into front of 
 	std::vector<TileType> column = std::vector<TileType>();
 
@@ -294,14 +290,10 @@ void Mapping::move_column_offscreen(bool leftward)
 	//loop through the map
 	for (auto vec : mTiles)
 	{
-		//if(left_right_movement > 0 && moving_left)
 		//take the first or last element of each push to column
 		if (!leftward)
 		{
-			//make moving right true and was moving left true
-			moving_right = true;
-			moving_left = false;
-			was_moving_left = true;
+			//make moving right increments
 			left_right_movement++;
 
 			//save the column element
@@ -309,15 +301,20 @@ void Mapping::move_column_offscreen(bool leftward)
 			//erase that element from the map;
 			//hopefully erase will resize the vector automatically
 			mTiles[i].erase(mTiles[i].begin());
-			//then insert a block at the end
-			mTiles[i].insert(mTiles[i].end(), Block);
+
+			//if the abs value decreased then you know the player changed direction
+			if (std::abs(left_right_movement) < std::abs(previous_lr_movement) && !storage.empty() )
+			{
+				//insert from last vector in storage into the last column of map
+				mTiles[i].insert(mTiles[i].end(), storage.back()[i]);	
+			}
+			//else insert a block at the front if the player changed direction
+			else
+				mTiles[i].insert(mTiles[i].end(), Block);
 		}	
 		else
 		{
-			//make moving left true and was moving right true
-			moving_left = true;
-			moving_right = false;
-			was_moving_right = true;
+			//make moving left decrements
 			left_right_movement--;
 
 			//save the column element
@@ -325,21 +322,34 @@ void Mapping::move_column_offscreen(bool leftward)
 			//erase that element from the map;
 			//hopefully erase will resize the vector automatically
 			mTiles[i].pop_back();
-			//we do'nt want to placce blocks at the front if the chracterhas'nt returned to the middle of lane
-			if (left_right_movement > 0)
+			//we don't want to place blocks at the front if the chracterhas'nt returned to the middle of lane
+
+			if (std::abs(left_right_movement) < std::abs(previous_lr_movement) && !storage.empty())
 			{
-				//then insert a block at the front
-				mTiles[i].insert(mTiles[i].begin(), Block);
+				//insert from the last member in storage into the map's front
+				mTiles[i].insert(mTiles[i].begin(), storage.back()[i]);
 			}
+			//else insert a block at the front if the player changed direction
 			else
-				replace_column();
+				mTiles[i].insert(mTiles[i].begin(), Block);
+
 		}
 		//increment
 		i++;
 	}
-	std::cout << left_right_movement << std::endl;
-	//put the column in storage
-	storage.push_back(column);
+
+	//if the conditions to replace a row from storage were met then pop storage
+	if(std::abs(left_right_movement) < std::abs(previous_lr_movement) && !storage.empty())
+		storage.pop_back();
+
+	else
+	{
+		//save the column in storage
+		storage.push_back(column);
+		//clear the column
+		column.clear();
+	}
+		
 }
 
 

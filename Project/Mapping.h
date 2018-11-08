@@ -35,7 +35,10 @@ class Mapping
 	//bools for which direction the player has been moving
 	bool moving_up, moving_down, moving_left, moving_right;
 	bool was_moving_up, was_moving_down, was_moving_left, was_moving_right;
+
+	//these ints are more detailed than the bools
 	int left_right_movement;
+	int previous_lr_movement;
 
 	//randomize tiles
 	void random_tiles_row();
@@ -59,11 +62,11 @@ public:
 
 	//bools to block movement
 	bool up_obsticle, dwn_obsticle, lft_obsticle, rght_obsticle;
+	int one_direction;
 
 	void map_render(SDL_Renderer* r);
 	void move_row_offscreen(bool upward);
 	void move_column_offscreen(bool leftward);
-	void replace_column();
 	void SaveMap();
 	void ReadMap();
 	void Form_Initial_Map();
