@@ -62,16 +62,16 @@ public:
 
 	//bools to block movement
 	bool up_obsticle, dwn_obsticle, lft_obsticle, rght_obsticle;
-	int one_direction;
 
 	void map_render(SDL_Renderer* r);
 	void move_row_offscreen(bool upward);
 	void move_column_offscreen(bool leftward);
+	void move_sprite_lr(bool leftward);
 	void SaveMap();
 	void ReadMap();
 	void Form_Initial_Map();
 
-	void animate_help(int w, int h, int offsetX, int offsetY, int frames, int row, int column, int sprites_in_row, int delay);
+	void animate_player_help(int w, int h, int offsetX, int offsetY, int frames, int row, int column, int sprites_in_row, int delay);
 	void render_ex(SDL_Renderer* r, SDL_Texture* tx, SDL_Rect* src, SDL_Rect* dest, SDL_RendererFlip flip = SDL_FLIP_NONE, double angle = 0.0, SDL_Point* center = NULL);
 
 	//flipper might not be necessary, which would also make render_ex unnecessary

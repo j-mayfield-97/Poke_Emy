@@ -6,8 +6,8 @@ GameMan::GameMan()
 
 GameMan::GameMan(SDL_Renderer* r)
 {
-	//map = new Mapping();
-	player = new Trainer();
+	//map = new Mapping(); Mapping is now an object in container
+	//player = new Trainer();
 	control = new Controller(r);
 }
 
@@ -16,11 +16,11 @@ GameMan::~GameMan()
 {
 	control->~Controller();
 	//map->~Mapping();
-	player->~Trainer();
+	//player->~Trainer();
 }
 
-void GameMan::update(SDL_Renderer* r)
+void update(SDL_Renderer* r, Trainer* player)
 {
-	control->main_game_controller(r);
+	//control->main_game_controller(r);
 	//update trainer logic
 }

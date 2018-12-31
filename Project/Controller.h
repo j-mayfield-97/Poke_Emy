@@ -1,10 +1,12 @@
 #pragma once
 #include "Mapping.h"
+#include "Code_Files/Trainer.h"
 class Controller
 {
 	int mouse_x, mouse_y;
 	SDL_Event e;
 	Mapping* main_map;
+	Trainer* player;
 public:
 	Controller();
 	Controller(SDL_Renderer* r);
@@ -17,11 +19,11 @@ public:
 	int move_delay;
 
 	//main controls for inputs
-	void main_game_controller(SDL_Renderer * r);
+	void main_game_controller(SDL_Renderer* r);
 	//menu controls
 	void menu_controls();
 	//controls for battles
-	void battle_controls();
+	void battle_controls(SDL_Renderer* r);
 
 	//bools to chek which control scheme is being used
 	bool running;

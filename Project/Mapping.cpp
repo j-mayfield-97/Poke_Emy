@@ -45,7 +45,7 @@ Mapping::Mapping(SDL_Renderer* r)
 	wld_tx = IMG_LoadTexture(r, "assets/grass32.png");
 }
 
-
+//clean up 
 Mapping::~Mapping()
 {
 	SDL_DestroyTexture(emp_tx);
@@ -55,24 +55,39 @@ Mapping::~Mapping()
 
 //this set of functions is to sheck what tiles are immeadiately around the player
 //the player is always in the middle so whats around the player is the rows above and below and columns to the right and left
+//change this !!! THE PLAYER is no longer always in the middle
+//theres also danger of going out of bounds!!!!!! unlikely but dangerous
 TileType Mapping::collision_up()
 {
-	return mTiles[mTiles.size() / 2 - 1][mTiles[0].size() / 2];
+	int sprite_row = sprite_rect.y / tile_size;
+	int sprite_column = sprite_rect.x / tile_size;
+
+	return mTiles[sprite_row - 1][sprite_column];
 }
+
 TileType Mapping::collision_down()
 {
-	return mTiles[mTiles.size() / 2 + 1][mTiles[0].size() / 2];
+	int sprite_row = sprite_rect.y / tile_size;
+	int sprite_column = sprite_rect.x / tile_size;
+
+	return mTiles[sprite_row + 1][sprite_column];
 }
 TileType Mapping::collision_right()
 {
-	return mTiles[mTiles.size() / 2][mTiles[0].size() / 2 + 1];
+	int sprite_row = sprite_rect.y / tile_size;
+	int sprite_column = sprite_rect.x / tile_size;
+
+	return mTiles[sprite_row ][sprite_column + 1];
 }
 TileType Mapping::collision_left()
 {
-	return mTiles[mTiles.size() / 2][mTiles[0].size() / 2 - 1];
+	int sprite_row = sprite_rect.y / tile_size;
+	int sprite_column = sprite_rect.x / tile_size;
+
+	return mTiles[sprite_row][sprite_column - 1];
 }
 
-//this function will check all arounf the player and return whats under the player
+//this function will check all around the player and return whats under the player
 //if the tile is not passable then the corresponding bool gets set to true
 TileType Mapping::collision_player()
 {
@@ -98,10 +113,14 @@ TileType Mapping::collision_player()
 		lft_obsticle = false;
 
 	//returns whats under the player
-	return mTiles[mTiles.size() / 2][mTiles[0].size() / 2];
+
+	int sprite_row = sprite_rect.y / tile_size;
+	int sprite_column = sprite_rect.x / tile_size;
+
+	return mTiles[sprite_row][sprite_column];
 }
 
-///You should have this function retruning a row instead of pushing it back in the function, it'd be more useful that way
+//You should have this function retruning a row instead of pushing it back in the function, it'd be more useful that way
 void Mapping::random_tiles_row()
 {
 	//index i is how many tiles that will be needed in a single column
@@ -138,7 +157,7 @@ void Mapping::random_tiles_row()
 //Make a full map to start with
 void Mapping::Form_Initial_Map()
 {
-	//index i is how many tiles that will be needed in a single column
+	//interator i is how many tiles that will be needed in a single column
 	//this should be a constant
 	int i = screenHeight / tile_size;
 
@@ -149,7 +168,7 @@ void Mapping::Form_Initial_Map()
 	}
 }
 //move thorugh sprite sheet to give the illusion of animations
-void Mapping::animate_help(int w, int h, int offsetX, int offsetY, int frames, int row, int column, int sprites_in_row, int delay)
+void Mapping::animate_player_help(int w, int h, int offsetX, int offsetY, int frames, int row, int column, int sprites_in_row, int delay)
 {
 	//w and h are size of sprites on the sheet
 	//offsets from topleft and right
@@ -158,7 +177,7 @@ void Mapping::animate_help(int w, int h, int offsetX, int offsetY, int frames, i
 	//sprites in row is how many sprites are in the row
 	//and delay is how long the animations will play
 
-	src_sprite_rect.y = (row * h) + offsetY;
+	src_sprite_rect.y = (row * h) + offsetY ;
 	src_sprite_rect.w = w;
 	src_sprite_rect.h = h;
 
@@ -219,6 +238,7 @@ void Mapping::map_render(SDL_Renderer* r)
 			}
 		}
 	}
+	//render the player sprite
 	render_ex(r, sprite_tx, &src_sprite_rect, &sprite_rect, flipper);
 }
 //funntion to remove a row as it leaves the players view
@@ -263,8 +283,7 @@ void Mapping::move_row_offscreen(bool upward)
 		mTiles.pop_back();
 		//insert the new row at the front
 		mTiles.insert(mTiles.begin(), row);
-		//increment onedirection
-		one_direction++;
+
 	}
 	//if downward, remove the first row and push the new row to the back
 	else
@@ -273,8 +292,7 @@ void Mapping::move_row_offscreen(bool upward)
 		mTiles.erase(mTiles.begin());
 		//push new row to the back
 		mTiles.push_back(row);
-		//decrement onedirection
-		one_direction--;
+
 	}
 }
 
@@ -352,13 +370,25 @@ void Mapping::move_column_offscreen(bool leftward)
 		
 }
 
+void Mapping::move_sprite_lr(bool leftward)
+{
+	if(leftward)
+		//if(sprite_rect.x >= tile_size)
+			sprite_rect.x -= tile_size;
+	else
+		//if (sprite_rect.x <= screenWidth - tile_size)
+			sprite_rect.x += tile_size;
+
+	std::cout << sprite_rect.x << std::endl;
+}
+
 
 
 //function to save map to close game and open it later
 void Mapping::SaveMap()
 {
 	//create a text file with the name of this string
-	std::ofstream map_save("mapsave.mp");
+	std::ofstream map_save("savedat/mapsave.mp");
 	//give it a title
 	map_save << "MAP" << std::endl;
 	//loop through every element in mTiles
@@ -380,7 +410,7 @@ void Mapping::SaveMap()
 void Mapping::ReadMap()
 {
 	//open file
-	std::ifstream infile("mapsave.mp");
+	std::ifstream infile("savedat/mapsave.mp");
 
 	//iterator to read each chracter in the file
 	char iterate;

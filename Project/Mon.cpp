@@ -4,8 +4,8 @@
 
 Mon::Mon()
 {
-	//init an empty mon , to later be filled in with a separate function
-	name = "EMPTY";
+	//init an empty mon, to later be filled in with a separate function
+	name = "EMPTY_Mon";
 	alive = true;
 	type1 = NULL;
 	type2 = NULL;
@@ -17,6 +17,17 @@ Mon::Mon()
 	originalHp = -1;
 	hp = -1;
 	pp = -1;
+	
+	//init moves and learn some
+	Moves first = Moves("first");
+	Moves sec = Moves("sec");
+	Moves thr = Moves("thr");
+	Moves frth = Moves("frth");
+	learnMoves(first);
+	learnMoves(sec);
+	learnMoves(thr);
+	learnMoves(frth);
+
 }
 Mon::~Mon()
 {

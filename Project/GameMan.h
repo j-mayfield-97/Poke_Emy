@@ -11,14 +11,13 @@ public:
 	GameMan(SDL_Renderer * r);
 	~GameMan();
 
-	//Most important objects to run a game
-	//Mapping* map;  I'd rather have Map as a member of GameMan, but for now controls needs access to it.
-	//actually lster I could just pass the map as a parameter of controls
-	Trainer* player;
+	// Most important objects to run a game
+	// Mapping* map;  I'd rather have Map as a member of GameMan, but for now controls needs access to it.
+	//actually later I could just pass the map as a parameter of controls
+	//Trainer* player;
 	Controller* control;
 
 	//update everything 
-	void update(SDL_Renderer* r);
-
+	//void update(SDL_Renderer* r, Trainer* player);
 };
 

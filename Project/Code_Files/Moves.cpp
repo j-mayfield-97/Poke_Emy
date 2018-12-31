@@ -2,11 +2,12 @@
 
 #include "Moves.h"
 
-Moves::Moves()
+Moves::Moves(const char* title)
 {
-
+	name_move = title;
+	move_id = -1;
 }
-Moves::Moves(int arg, ...)
+Moves::Moves(int arg)
 {
 
 }

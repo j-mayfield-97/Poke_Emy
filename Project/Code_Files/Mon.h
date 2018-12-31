@@ -2,6 +2,8 @@
 #include <vector>
 #include "Moves.h"//would the mon need to know if its caught and who its owner is?
 
+//This was written early and needs to be restructed to my mist recent standards
+
 class Mon
 {
 public: 
@@ -28,29 +30,43 @@ public:
 	//four moves max for now
 	//blank moves array
 	Moves moves[4] = {NULL,NULL,NULL,NULL};
+	std::vector<Moves> move_list;
 
 	void learnMoves(Moves mov)
-	{
+	{ 
+		move_list.push_back(mov);
+
+		std::cout << name << " learned " << mov.name_move << std::endl;
+		//check to make shure there arent any duplicates added to the pokemons list of moves
+		//a capacity integer for the list is also an option
+		//if(move_list)
+		
+
+		/*
 		int i = 0;
 		//loop through the array and iff the array has a null slot fill in the new move
 		for (auto mIndex : moves)
 		{
-			if (moves[i] == NULL)
+			if (moves[i].isNULL() || moves[i] == NULL)
 			{
 				moves[i] = mov;
 				std::cout << name << " learned " << mov.name_move << std::endl;
 				return;
 			}
+			i++;
 		}
 		//if the loop doesn't find any empty slots then it should reset
 		std::cout << name << " could not learn " << mov.name_move << std::endl;
+		*/
 	}
+	
 
 	//these print funtions should push sdl text to the screen instead of printing to console
 	void printMoves()
 	{
+		
 		std::cout << name << " knows ";
-		for (auto i : moves)
+		for (auto i : move_list)
 		{
 			std::cout << i.name_move << ", ";
 		}

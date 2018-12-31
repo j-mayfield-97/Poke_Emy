@@ -7,10 +7,33 @@
 #include <SDL_mixer.h>
 #include <SDL_ttf.h>
 #include "GameMan.h"
+/*
+TODO
 
+fix map obstacle logic
+get battles functional
+battle menu ui
+set up mons/moves/effects with the json parser
+change all the console messages into SDL text ingame
+other trainers
+other trainers ai
+items and item shops
+restructure code to be more elegant
+go through all your notes
+time-stamp mons so they have unique id's
+
+*/
 
 /*
-I hope for this to be a randomly genrated pokeman-like game
+Ideas
+
+you can go in either direction , as long as you continue the game will get harder
+Hearthstone class types
+run based 
+monster collecting eit nuzlockish rules -have to name the mons -only catch one every ~100 steps
+item shops
+unlock pokemon for new run permenantly
+types can be based on emotions?
 */
 SDL_Renderer* ren;
 SDL_Window* win;
@@ -99,7 +122,7 @@ void clean()
 void game_loop()
 {
 	init();
-	//instantiate main game object
+	//instantiate
 	gam = new GameMan(ren);
 
 	while (gam->control->running)
@@ -107,6 +130,7 @@ void game_loop()
 		fps_60();
 		//draw map
 		//draw character
+		//for now controls is holding the majority of the objects related to the game
 		gam->control->main_game_controller(ren);
 		//render to window
 		SDL_RenderPresent(ren);
