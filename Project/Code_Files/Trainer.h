@@ -2,32 +2,31 @@
 #include <vector>
 #include "Mon.h"
 
-class Trainer
+class Trainer: public Combatant
 {
-	const char* name;
-	int type_ID;
-	int attack;
-	int defense;
-	int health_pool;
-	
-	//Mon* monsters[3];
-	Mon* opponent_mon;
 
 public:
-	Trainer();
+	Trainer(const char* _name, int att, int def, int _health) :
+		Combatant(_name, att, def, _health) 
+	{ //the player never starts in a battle
+		battling = false;
+	}
 	~Trainer();
-
-	std::vector<Mon*> mons;
 
 	//tiles moved in one direction makes the game more challenging and rewarding
 	int one_direction;
 
+	std::vector<Mon*> mons;
+
 	void print_stats();
 	void catch_mon(Mon* m);
-	void attack_mon(Mon* m);
 	void make_catchable(Mon* m);
 	void hp_increase(Mon* m);
 	void random_encounter();
+
+	//work the way select_rect works for battle menu
+	//to be set externally by menu options
+	Combatant* selected_target;
 
 	//bool to keep the player in a battle
 	bool battling;

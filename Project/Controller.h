@@ -9,8 +9,10 @@ class Controller
 	Trainer* player;
 public:
 	Controller();
-	Controller(SDL_Renderer* r);
+	Controller(SDL_Renderer* r);	
 	~Controller();
+	//setup to test battles before json implimentation
+	void test_setup();
 
 	//bool and ints to determine if the player can move again
 	//move delay is in milliseconds

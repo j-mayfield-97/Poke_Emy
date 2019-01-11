@@ -10,8 +10,8 @@ struct BattleStruct
 {
 	BattleStruct();
 	BattleStruct(SDL_Renderer *r);
+
 	void texture_wipe();
-	//void EHswap(SDL_Renderer* r);
 	void ren_copies(SDL_Renderer* r);
 	void hovering(SDL_Renderer* r);
 
@@ -42,7 +42,6 @@ private:
 	SDL_Texture* quittx;
 
 	//array for iterating through menu tiles
-	//SDL_Rect rect_arr[6];
 
 	std::vector<SDL_Rect*> rect_pntr_vec;
 
@@ -67,35 +66,35 @@ BattleStruct::BattleStruct(SDL_Renderer* r)
 
 	//Menu Sign at top
 	battlingRect.h = screenHeight / 4;
-	battlingRect.w = screenWidth / 2;
-	battlingRect.x = screenWidth - battlingRect.w;
-	battlingRect.y = 10;
+	battlingRect.w = screenWidth / 4;
+	battlingRect.x = 0;
+	battlingRect.y = 0;
 
 	//option and player are not operational 
-	opt.h = screenHeight / 5;
-	opt.w = screenWidth / 2;
-	opt.x = 0;
-	opt.y = 0;
+	bot.h = battlingRect.h;
+	bot.w = battlingRect.w;
+	bot.x = 0;
+	bot.y = 0;
 
-	player.h = screenHeight / 6;
-	player.w = screenWidth / 6;
-	player.x = opt.x + player.w;
-	player.y = opt.y + opt.h + bot.y;
+	opt.h = battlingRect.h;
+	opt.w = battlingRect.w;
+	opt.x = bot.x + bot.w;
+	opt.y = bot.y + bot.h;
 
-	bot.h = screenHeight / 5;
-	bot.w = screenWidth / 5;
-	bot.x = opt.x + opt.w + 5;
-	bot.y = opt.y + opt.h;
+	player.h = battlingRect.h;
+	player.w = battlingRect.w;
+	player.x = opt.x + opt.w;
+	player.y = opt.y + opt.h;
 
-	difficulty.h = screenHeight / 5;
-	difficulty.w = screenWidth / 2;
+	difficulty.h = battlingRect.h;
+	difficulty.w = battlingRect.w;
 	difficulty.x = screenWidth / 4;
 	difficulty.y = opt.h + opt.y + 5;
 
-	quit.h = screenHeight / 3;
-	quit.w = screenWidth / 2;
-	quit.x = screenWidth / 4;
-	quit.y = screenHeight - quit.h;
+	quit.h = battlingRect.h;
+	quit.w = battlingRect.w;
+	quit.x = player.x + player.w;
+	quit.y = player.y + player.h;
 
 	//current rect starts at bot
 	currentRect = &bot;
@@ -110,7 +109,7 @@ BattleStruct::BattleStruct(SDL_Renderer* r)
 	quittx  = IMG_LoadTexture(r, "assets/menuQuit.png");
 
 	//array for iterating through menu tiles
-
+	//these are the only rects linked to a functionality in controls.cpp
 	rect_pntr_vec.push_back(&player);
 	rect_pntr_vec.push_back(&opt);
 	rect_pntr_vec.push_back(&bot);

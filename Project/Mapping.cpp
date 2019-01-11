@@ -410,7 +410,7 @@ void Mapping::SaveMap()
 void Mapping::ReadMap()
 {
 	//open file
-	std::ifstream infile("savedat/mapsave.mp");
+	std::ifstream infile("SaveData/mapsave.mp");
 
 	//iterator to read each chracter in the file
 	char iterate;

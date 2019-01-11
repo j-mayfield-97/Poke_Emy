@@ -3,6 +3,7 @@
 #include "Controller.h"
 #include "Code_Files/BattleMenu.h"
 #include <SDL_image.h>
+
 Controller::Controller()
 {
 }
@@ -26,8 +27,58 @@ Controller::Controller(SDL_Renderer* r)
 	main_map->animate_player_help(20, 32, 2, 2, 3, 0, 0, 10, move_delay);
 
 	//instance player
-	player = new Trainer();
+	player = new Trainer("trainer_player", 3, 5, 20);
 }
+
+void Controller::test_setup()
+{
+	//init moves and learn some
+	Moves first = Moves("first", 0, 1, 20, 1);
+	Moves sec = Moves("sec", 0, 1, 20, 5);
+	Moves thr = Moves("thr", 0, 1, 20, 10);
+	Moves frth = Moves("frth", 0, 1, 20, 20);
+
+	player->learnMoves(first);
+	player->learnMoves(sec);
+	player->learnMoves(thr);
+	player->learnMoves(frth);
+
+	Mon* mon1 = new Mon("mon1", 2, 3, 20);
+	Mon* mon2 = new Mon("mon2", 2, 9, 20);
+	Mon* mon3 = new Mon("mon3", 10, 3, 20);
+
+	mon1->learnMoves(first);
+	mon1->learnMoves(sec);
+
+	mon2->learnMoves(first);
+	mon2->learnMoves(thr);
+
+	mon3->learnMoves(first);
+	mon3->learnMoves(frth);
+
+	player->mons.push_back(mon1);
+
+	Trainer* opp = new Trainer("trainer_opp",  4 , 8, 30);
+
+	opp->learnMoves(sec);
+
+	Mon* oppmon1 = new Mon("opmon1", 2, 3, 20);
+	Mon* oppmon2 = new Mon("opmon2", 2, 40, 20);
+	Mon* oppmon3 = new Mon("opmon3", 2, 10, 20);
+
+	oppmon1->learnMoves(first);
+	oppmon1->learnMoves(sec);
+
+	oppmon2->learnMoves(first);
+	oppmon2->learnMoves(thr);
+
+	oppmon3->learnMoves(first);
+	oppmon3->learnMoves(frth);
+
+	player->set_opponent(opp);
+}
+
+
 
 Controller::~Controller()
 {
