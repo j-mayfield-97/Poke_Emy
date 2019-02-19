@@ -7,6 +7,7 @@
 #include "rapidjson/stringbuffer.h"
 #include "rapidjson/filereadstream.h"
 #include "rapidjson/filewritestream.h"
+#include <rapidjson/prettywriter.h>
 #include <rapidjson/istreamwrapper.h>
 #include <rapidjson/ostreamwrapper.h>
 #include <cstdio>
@@ -27,11 +28,8 @@ void jsonT() {
 	//access member then set it
 	rapidjson::Value& s = d["stars"];
 	s.SetInt(s.GetInt() + 1);
-
 	
-
 	// Output to terminal {"project":"rapidjson","stars":11}
-	
 
 	//reading json stuff from files
 	// If the file is not UTF-8, the byte stream can be wrapped in a EncodedInputStream
@@ -43,6 +41,7 @@ void jsonT() {
 	doc.ParseStream(is);
 	fclose(fp);*/
 
+	//read
 	std::ifstream ifs("SaveData/big.json");
 	rapidjson::IStreamWrapper isw(ifs);
 	rapidjson::Document dread;
@@ -52,6 +51,7 @@ void jsonT() {
 	//stringifying
 	rapidjson::StringBuffer buffer;
 	rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
+	
 	dread.Accept(writer);
 	std::cout << buffer.GetString() << std::endl;
 	//std::cout << dread.GetString() << std::endl;
@@ -65,9 +65,10 @@ void jsonT() {
 	rapidjson::Writer<rapidjson::FileWriteStream> writerw(os);
 	d.Accept(writerw);
 	fclose(fp); */
-	std::ofstream ofs("SaveData/output.json");
+	std::ofstream ofs("SaveData/outputP.json");
 	rapidjson::OStreamWrapper osw(ofs);
 	rapidjson::Writer<rapidjson::OStreamWrapper> writerwr(osw);
-	d.Accept(writerwr);
+	rapidjson::PrettyWriter<rapidjson::OStreamWrapper> pw(osw);
+	d.Accept(pw);
 	ofs.close();
 }

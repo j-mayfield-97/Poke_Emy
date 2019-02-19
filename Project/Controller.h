@@ -7,18 +7,21 @@ class Controller
 	SDL_Event e;
 	Mapping* main_map;
 	Trainer* player;
-public:
-	Controller();
-	Controller(SDL_Renderer* r);	
-	~Controller();
-	//setup to test battles before json implimentation
-	void test_setup();
 
 	//bool and ints to determine if the player can move again
 	//move delay is in milliseconds
 	bool can_move;
 	int ticker;
 	int move_delay;
+
+	std::vector<char> function_queue;
+
+public:
+	Controller();
+	Controller(SDL_Renderer* r);	
+	~Controller();
+	//setup to test battles before json implimentation
+	void test_setup();
 
 	//main controls for inputs
 	void main_game_controller(SDL_Renderer* r);

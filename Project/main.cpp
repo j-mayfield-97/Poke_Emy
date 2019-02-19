@@ -7,11 +7,15 @@
 #include <SDL_mixer.h>
 #include <SDL_ttf.h>
 #include "GameMan.h"
+#include "JSONTEST.h"
 /*
 TODO
 
+I'm having trouble articulating this search but would it be 
+- possible for a friend class to have access to the inherited members of a derived class?
+
 fix map obstacle logic
-get battles functional
+get battles functional - battle queue
 battle menu ui
 set up mons/moves/effects with the json parser
 change all the console messages into SDL text ingame
@@ -21,19 +25,45 @@ items and item shops
 restructure code to be more elegant
 go through all your notes
 time-stamp mons so they have unique id's
-
+make the games Room based instead of infinite directions
+set up what a turn is
+error handling - json schemas and validation
+random int / timestamped ID for identifiying mons, instead of using name strings .. possibly uuid from lua
+std::set might help runtime instead of using std::vector
+keep a list of all tags that have been used in order to 
 */
 
 /*
+known bugs
+large strange printing of lines to the console
+YYYYYYYYYYYYYY in the Name element of Mons 
+
 Ideas
 
+crits or no crits?
 you can go in either direction , as long as you continue the game will get harder
-Hearthstone class types
+Hearthstoneish tag types
 run based 
-monster collecting eit nuzlockish rules -have to name the mons -only catch one every ~100 steps
+room by room based
+monster collecting eit nuzlockish rules -have to name the mons -only catch one every room
+optional room bosses and forced room bosses
 item shops
-unlock pokemon for new run permenantly
+an item to redo the room you've just completed 
+a move that kill all your current mons for one of the opponents mons 
+a move that uses half your hp to block an status effects and damage for a turn
+move where one mon holds another mon making it increasing damage
+unlock mon for new runs permenantly
 types can be based on emotions?
+tags instead of types
+like a five tag limit
+smile heals everyone around you
+grin frightens opponent (wont be targeted this turn)
+HMs useable in rooms
+puzzle rooms???
+no healing in between battles
+types could be reduced to sharp, blunt, heal
+*/
+/*
 */
 SDL_Renderer* ren;
 SDL_Window* win;
@@ -45,7 +75,7 @@ GameMan* gam;
 void init()
 {
 	//make the window
-	win = SDL_CreateWindow("2D_plat", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, screenWidth, screenHeight, SDL_WINDOW_SHOWN);
+	win = SDL_CreateWindow("MONs", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, screenWidth, screenHeight, SDL_WINDOW_SHOWN);
 
 	if (win == NULL)
 	{
@@ -113,7 +143,7 @@ void clean()
 {
 	SDL_DestroyRenderer(ren);
 	SDL_DestroyWindow(win);
-	gam->~GameMan();
+	delete gam;
 	TTF_Quit();
 	Mix_Quit();
 	SDL_Quit();

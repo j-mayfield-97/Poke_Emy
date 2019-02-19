@@ -4,8 +4,11 @@
 #include <SDL_image.h>
 #include "../Enum_Pokes.h"
 #include <vector>
+#include <functional>
+#include "../Combatant.h"
 //FOR SOME REASON This has access to main's renderer - ren
 //get all logic of menu into this class
+
 struct BattleStruct
 {
 	BattleStruct();
@@ -31,6 +34,20 @@ struct BattleStruct
 	SDL_Rect quit ;
 	SDL_Rect* currentRect ;
 
+	//visual studios defaulted all the queueing functions to be inline 
+	//I will trust it and leave them inline for now
+
+	//example
+	// a punches b
+	//push function*  with the target Combatant* and the stat from the attacker used to determine damage
+	void push_to_q(void(*action)(Combatant*, Combatant*, int), Combatant* actor, Combatant* com, int num);
+	void push_to_front(void(*action)(Combatant*, Combatant*, int), Combatant* actor, Combatant* com, int num);
+	void push_to_back(void(*action)(Combatant*, Combatant*, int), Combatant* actor, Combatant* com, int num);
+
+	void undo_q();
+
+	void play_q();
+
 private:
 	SDL_Texture* menutx;
 	SDL_Texture* overtx ;
@@ -45,10 +62,21 @@ private:
 
 	std::vector<SDL_Rect*> rect_pntr_vec;
 
+	//holds the battle action order and values attached to them
+	std::vector<void(*)(Combatant*, Combatant*, int)> action_queue;
+	//combatant queues can be compacted into one later
+	std::vector<Combatant*> actor_q;
+	std::vector<Combatant*> combatant_q;
+	std::vector<int> int_q;
+
+	//probably not a very good way to run this but I'm curious
+	//std::vector<T(*)(T ...)> generic_queue;
+
 //for swaping easy and hard tiles
 	int EHswapCheck = 1;
 };
 
+//should not be used
 BattleStruct::BattleStruct() 
 { 
 }
@@ -331,4 +359,47 @@ SDL_Rect* BattleStruct::closest_down()
 		return store;
 	else
 		return nearest;
+}
+
+//main function to add an action to the queue actions will play out in order 
+inline void BattleStruct::push_to_q(void(*action)(Combatant*, Combatant*, int), Combatant* actor, Combatant* com, int num)
+{
+	//i dont know what actions to prohibit for now so all actions are allowed 
+	action_queue.push_back(action);
+	actor_q.push_back(actor);
+	combatant_q.push_back(com);
+	int_q.push_back(num);
+}
+
+inline void BattleStruct::push_to_front(void(*action)(Combatant*, Combatant *, int), Combatant* actor, Combatant* com, int num)
+{
+	action_queue.insert(action_queue.begin(), action);
+	actor_q.insert(actor_q.begin(), actor);
+	combatant_q.insert(combatant_q.begin(), com);
+	int_q.insert(int_q.begin(), num);
+}
+
+//no use for now
+//actions that occur after the turn is over
+//would need a separate queue
+inline void BattleStruct::push_to_back(void(*action)(Combatant*, Combatant *, int), Combatant* actor, Combatant* com, int num)
+{
+}
+
+inline void BattleStruct::undo_q()
+{
+	//possibly another feature could be to pass the function that should be undone
+	action_queue.pop_back();
+	actor_q.pop_back();
+	combatant_q.pop_back();
+	int_q.pop_back();
+}
+
+inline void BattleStruct::play_q()
+{
+	//all three queues should remain the same size
+	for (int i = 0; i < action_queue.size(); i++)
+	{
+		action_queue[i]((actor_q[i]), (combatant_q[i]), (int_q[i]));
+	}
 }

@@ -11,6 +11,7 @@ Moves::Moves(const char * title, int _move_id, int _cost, int _limit, int att)
 	baseAtt = att;
 
 }
+
 Moves::Moves(int arg)
 {
 	//wont be usefull after json parser implimented

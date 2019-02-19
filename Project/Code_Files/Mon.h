@@ -8,8 +8,11 @@ class Mon: public Combatant
 {
 public: 
 	Mon();
+	Mon(int id);
 	Mon(const char* _name, int att, int def, int _health) :
-		Combatant(_name, att, def, _health) {};
+		Combatant(_name, att, def, _health) {
+		set_ID();
+	};
 	~Mon();
 
 	bool catch_mon();
@@ -18,7 +21,9 @@ public:
 
 	void hp_increase();
 
-
+	void write_stats();
+	void read_stats();
+	void read_stats(int id);
 	void printMoves();
 	void printStats();
 protected:
@@ -27,8 +32,8 @@ protected:
 	int type2;
 
 	//to be implemented later
-//	int magic;
-//	int EX points; //points from battle and points to use magic
+	//int magic;
+	//int EX points; //points from battle and points to use magic
 	//unique id
 	//species id
 

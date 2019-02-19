@@ -28,8 +28,17 @@ Controller::Controller(SDL_Renderer* r)
 
 	//instance player
 	player = new Trainer("trainer_player", 3, 5, 20);
+
+
+	Trainer* opp = new Trainer("trainer_opp", 4, 8, 30);
+	player->set_opponent(opp);
+
+	//reads to overwrite the test_setup stats
+	player->read_stats();
+	player->get_opponent()->read_stats();
 }
 
+//currently useless but the format of this function is useful
 void Controller::test_setup()
 {
 	//init moves and learn some
@@ -43,9 +52,9 @@ void Controller::test_setup()
 	player->learnMoves(thr);
 	player->learnMoves(frth);
 
-	Mon* mon1 = new Mon("mon1", 2, 3, 20);
-	Mon* mon2 = new Mon("mon2", 2, 9, 20);
-	Mon* mon3 = new Mon("mon3", 10, 3, 20);
+	Mon* mon1 = new Mon();
+	Mon* mon2 = new Mon();
+	Mon* mon3 = new Mon();
 
 	mon1->learnMoves(first);
 	mon1->learnMoves(sec);
@@ -56,15 +65,17 @@ void Controller::test_setup()
 	mon3->learnMoves(first);
 	mon3->learnMoves(frth);
 
-	player->mons.push_back(mon1);
+	player->add_mon(mon1);
+	player->add_mon(mon2);
+	player->add_mon(mon3);
 
 	Trainer* opp = new Trainer("trainer_opp",  4 , 8, 30);
 
 	opp->learnMoves(sec);
 
-	Mon* oppmon1 = new Mon("opmon1", 2, 3, 20);
-	Mon* oppmon2 = new Mon("opmon2", 2, 40, 20);
-	Mon* oppmon3 = new Mon("opmon3", 2, 10, 20);
+	Mon* oppmon1 = new Mon();
+	Mon* oppmon2 = new Mon();
+	Mon* oppmon3 = new Mon();
 
 	oppmon1->learnMoves(first);
 	oppmon1->learnMoves(sec);
@@ -75,13 +86,23 @@ void Controller::test_setup()
 	oppmon3->learnMoves(first);
 	oppmon3->learnMoves(frth);
 
+	opp->add_mon(oppmon1);
+	opp->add_mon(oppmon2);
+	opp->add_mon(oppmon3);
+
 	player->set_opponent(opp);
+	player->opponent_t = opp;
 }
 
 
 
 Controller::~Controller()
 {
+	if(player->get_opponent() != nullptr)
+		delete player->get_opponent();
+
+	delete player;
+	delete main_map;
 }
 
 void Controller::main_game_controller(SDL_Renderer* r)
@@ -239,6 +260,11 @@ void Controller::battle_controls(SDL_Renderer* r)
 	//serves a similar function to can_move from main controls, limiting the speed of inputs
 	bool prevention = true;
 
+	//temp test set up to be dleted later
+	//test_setup(); 
+
+	
+
 	while (player->battling)
 	{
 		if (prevention)
@@ -247,7 +273,7 @@ void Controller::battle_controls(SDL_Renderer* r)
 			const Uint8* currentKeyStates = SDL_GetKeyboardState(NULL);
 
 			//move delay for the tile selecting
-			move_delay = 600;
+			move_delay = 500;
 
 			while (SDL_PollEvent(&e) != 0)
 			{
@@ -257,6 +283,13 @@ void Controller::battle_controls(SDL_Renderer* r)
 				}
 			}
 
+			if (currentKeyStates[SDL_SCANCODE_Z])
+			{
+				//select above
+				battleObj->undo_q();
+				//reset to standard delay
+				prevention = false;
+			}
 
 			//wasd controls for navagating the menu
 			if (currentKeyStates[SDL_SCANCODE_W])
@@ -272,7 +305,6 @@ void Controller::battle_controls(SDL_Renderer* r)
 				battleObj->currentRect = battleObj->closest_left();
 
 				prevention = false;
-				std::cout << "left x " << battleObj->currentRect->x << "left y " << battleObj->currentRect->y << "left w " << battleObj->currentRect->w << std::endl;
 			}
 			if (currentKeyStates[SDL_SCANCODE_D])
 			{
@@ -280,7 +312,6 @@ void Controller::battle_controls(SDL_Renderer* r)
 				battleObj->currentRect = battleObj->closest_right();
 				//reset to standard delay
 				prevention = false;
-				std::cout << "right x " << battleObj->currentRect->x << "r y " << battleObj->currentRect->y << "r w " << battleObj->currentRect->w << std::endl;
 			}
 			if (currentKeyStates[SDL_SCANCODE_S])
 			{
@@ -292,27 +323,43 @@ void Controller::battle_controls(SDL_Renderer* r)
 			if (currentKeyStates[SDL_SCANCODE_SPACE])
 			{
 				//select will be a group of if statements that run if current rect has the correct address in it
-
+				//currently this block is just testing anyfunction that needs testing
 				//testing quit function
 				if (battleObj->currentRect == &battleObj->quit)
 				{
-					player->battling = false;
+					//triggers quiting battle screen
+					//player->battling = false;
+					//should pass player stat instead of constant
+					battleObj->play_q();
 					prevention = false;
 				}
 				if (battleObj->currentRect == &battleObj->bot)
 				{
-					player->print_stats();
+					//print stats write to the trainer and the mons jsons
+					//player->print_stats();
+					//player->opponent_t->print_stats();
+					/////////////////////
+					/// if the actions were not members of classes then i could access their address directly
+					///that kinda defeats the spirit of oop though
+					battleObj->push_to_q(&Combatant::basic_attack, player, player->get_opponent(), 10);
 					prevention = false;
+					std::cout << "bot\n";
 				}
 				if (battleObj->currentRect == &battleObj->player)
 				{
-					player->hp_increase(player->mons[0]);
+					battleObj->push_to_q(&Combatant::basic_defense, player, player->mon_returner(), 30);
+					player->mon_cycler();
 					prevention = false;
+					std::cout << "player\n";
 				}
 				if (battleObj->currentRect == &battleObj->opt)
 				{
-					player->make_catchable(player->mons[0]);
+					//player->make_catchable(player->mons[0]);
+					//player->set_opponent(player->opponent_t->mon_returner());
+					//player->attack_creature(player->move_list[0]);
+					battleObj->push_to_front(&Combatant::lick_wounds, player, player, 40);
 					prevention = false;
+					std::cout << "opt\n";
 				}
 			}
 		}
@@ -330,5 +377,6 @@ void Controller::battle_controls(SDL_Renderer* r)
 	}
 	//texture wipe
 	battleObj->texture_wipe();
+	delete battleObj;
 	//disable cursor
 }

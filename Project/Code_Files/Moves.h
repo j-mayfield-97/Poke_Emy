@@ -1,9 +1,11 @@
 #pragma once
 #include<iostream>
+
 class Moves
 {
 public:
 	Moves(const char* title, int _move_id, int _cost, int _limit, int _att);
+//	Moves(Combatant* actor, Combatant* com, int stat);
 	Moves(int arg);
 	~Moves();
 
