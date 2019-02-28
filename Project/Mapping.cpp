@@ -2,6 +2,7 @@
 
 #include "Mapping.h"
 #include <random>
+#include <ctime>
 #include <iostream>
 #include <fstream> 
 #include <SDL_image.h>
@@ -42,7 +43,9 @@ Mapping::Mapping(SDL_Renderer* r)
 	//I'll need  function to cut through the new sprite sheets
 	emp_tx = IMG_LoadTexture(r, "assets/wall32.png");
 	blk_tx = IMG_LoadTexture(r, "assets/water32.png");
-	wld_tx = IMG_LoadTexture(r, "assets/grass32.png");
+	wld_tx = IMG_LoadTexture(r, "assets/dirt32.png");
+	dor_tx = IMG_LoadTexture(r, "assets/grass32.png");
+	pnk_tx = IMG_LoadTexture(r, "assets/pnk.png");
 }
 
 //clean up 
@@ -51,6 +54,8 @@ Mapping::~Mapping()
 	SDL_DestroyTexture(emp_tx);
 	SDL_DestroyTexture(blk_tx);
 	SDL_DestroyTexture(wld_tx);
+	SDL_DestroyTexture(dor_tx);
+	SDL_DestroyTexture(pnk_tx);
 }
 
 //this set of functions is to sheck what tiles are immeadiately around the player
@@ -120,53 +125,187 @@ TileType Mapping::collision_player()
 	return mTiles[sprite_row][sprite_column];
 }
 
+bool immeadiate_collsion()
+{
+	SDL_assert("nope not ready yet");
+	return false;
+}
+
 //You should have this function retruning a row instead of pushing it back in the function, it'd be more useful that way
 void Mapping::random_tiles_row()
 {
-	//index i is how many tiles that will be needed in a single column
+	SDL_assert("nope not ready yet");
+}
+//function to place single door for egress make sure it is rendered last
+void Mapping::place_door()
+{
+	int x;
+	int y;
+	//rand generator
+	x = rand() % (mTiles[0].size() - 4);
+	y = rand() % (mTiles.size() - 4);
+	//place door
+	mTiles[x + 1][y + 1] = Door;
+}
+
+void Mapping::place_trainers()
+{
+}
+
+void Mapping::place_items(int row, int col, SDL_Renderer* r)
+{
+	//to be replaced by an item enum
+	int item_id = -1;
+	//get a rand in to decide which items are placed
+
+	//texture to be added to vec
+	SDL_Texture* _tx;
+	const char* path = "";
+
+	int rand_int = rand() % 100;
+	if (rand_int < 30)
+	{
+		item_id = 0;
+		path = "assets/floggy.png";
+	}
+	if (rand_int >= 50)
+	{
+		item_id = 1;
+		path = "assets/ball.png";
+	}
+
+	_tx = IMG_LoadTexture(r, path);
+	//create item obj to be pushed to vec
+	Item_Coords item_c = Item_Coords(row, col, item_id, _tx);
+	//get the width and height from sprite the x,y will be filled in loop
+	item_c.irect = sprite_rect;
+	non_trainer_coords.push_back(item_c);	
+}
+
+//the form of theis function is non optimal
+//decouple render and placement 
+// form a vetor of items
+//change the intial mapping loops to get the places of events 
+void Mapping::render_non_players(SDL_Renderer* r)
+{
+	//loop through vec placing the rect at the coords and use the same index to get the texture for rendering
+	for (auto item_c : non_trainer_coords)
+	{
+		
+		item_c.irect.x = item_c.ix * tile_size;
+		item_c.irect.y = item_c.iy * tile_size;
+
+		SDL_RenderCopy(r, item_c.itx, NULL, &item_c.irect);
+	}
+}
+
+//I've MESSED WITH the iteration and indexing in this function too much
+//items spawning in ocean are no longer bugs they are features, will add an item to get items that spawn in water.
+//Make a full map to start with
+void Mapping::Form_Initial_Map( SDL_Renderer* r)
+{
+	//clear previous map
+	mTiles.clear();
+	non_trainer_coords.clear();
+	//interator i is how many tiles that will be needed in a single column
 	//this should be a constant
-	int i = screenWidth / tile_size;
-	//random int 
+	int col_size = screenHeight / tile_size;
+
+	int row_size = screenWidth / tile_size;
+
+	int wall_size = row_size;
+
+	//random int to decide what goes in tiles 
 	int random_int;
+
+	TileType to_push;
 
 	//column array to keep tiles
 	std::vector<TileType> row;
+
+	//column array to keep tiles
+	std::vector<TileType> wall_row;
+
+	//make and push a wall row to the bottom of map
+	for (int row_index = 0; row_index < row_size; row_index++)
+		wall_row.push_back(Block);
+	mTiles.push_back(wall_row);
+
+	//seed for rand int
+	srand(std::time(NULL));
+
+	//loop through height of window and add randomized rows. kep in mind the actual 0th and final row and columns are going to be walls
+	for (int col_index = 1; col_index < col_size; col_index++)
+	{
+		for (int row_index = -1; row_index != row_size; row_index++)
+		{
+			//defualt is empty
+			to_push = Empty;
+			//rand generator
+			random_int = rand() % 100;
+			//percent ranges determine what tile gets pushed to the row vector
+			if (random_int > 50 && random_int <= 65)
+				to_push = Block;
+			if (random_int > 60 && random_int <= 65  /*embrace the bugs && !( col_index == 0 || row_index == -1 || col_index == col_size-1 || row_index == row_size-1)*/)
+			{
+				to_push = Event;
+				place_items(row_index + 1, col_index, r);
+			}
+			if (random_int > 65)
+				to_push = Wild;
+			row.push_back(to_push);
+		}
+		//make a wall on the left top and bottom and right sides 
+		row[0] = Block;
+		row.pop_back();
+		row[row.size() - 1] = Block;
 	
-	//loop through the row size and get a random number
-	for (; i > 0; i--)
-	{
-		//rand generator
-		random_int = rand() % 100;
+		//push that new row to the map
+		mTiles.push_back(row);
 
-		//percent ranges determine what tile gets pushed to the row vector
-		//empty should be the most prevalent
-		if (random_int <= 50)
-			row.push_back(Empty);
-		if (random_int > 50 && random_int <= 60)
-			row.push_back(Block);
-		if (random_int > 60)
-			row.push_back(Wild);		
+		row.clear();
 	}
-	//make a wall on the left and right sides
-	row[0] = Block;
-	row[row.size() - 2] = Block;
-	//push that new row to the map
-	mTiles.push_back(row);
+	mTiles.pop_back();
+	//push wall to top of map
+	mTiles.push_back(wall_row);
+
+	int sprite_row = sprite_rect.y / tile_size;
+	int sprite_column = sprite_rect.x / tile_size;
+	//mkae sure player is not locked in , and has a way out
+	//change tile under player
+	mTiles[sprite_row][sprite_column] = Empty;
+	//place door in map
+	place_door();
 }
 
-//Make a full map to start with
-void Mapping::Form_Initial_Map()
+
+/*
+void prevent_blocked()
 {
-	//interator i is how many tiles that will be needed in a single column
-	//this should be a constant
-	int i = screenHeight / tile_size;
 
-	//loop through height of window and add random rows
-	for (; i > 0; i--)
+	//prevent the player from being blocked in by wall tiles
+	int sprite_row = sprite_rect.y / tile_size;
+	int sprite_column = sprite_rect.x / tile_size;
+
+	if (Block == collision_up())
 	{
-		random_tiles_row();
+		mTiles[sprite_row - 1][sprite_column] = Empty;
+	}
+	if (Block == collision_down())
+	{
+		mTiles[sprite_row + 1][sprite_column] = Empty;
+
+	}
+	if (Block == collision_left())
+	{
+		mTiles[sprite_row][sprite_column - 1] = Empty;
+	}
+	if (Block == collision_right())
+	{
+		mTiles[sprite_row][sprite_column + 1] = Empty;
 	}
 }
+*/
 //move thorugh sprite sheet to give the illusion of animations
 void Mapping::animate_player_help(int w, int h, int offsetX, int offsetY, int frames, int row, int column, int sprites_in_row, int delay)
 {
@@ -229,8 +368,14 @@ void Mapping::map_render(SDL_Renderer* r)
 			case Block:
 				SDL_RenderCopy(r, blk_tx, NULL, &draw_rect);
 				break;
+			case Event:
+				SDL_RenderCopy(r, pnk_tx, NULL, &draw_rect);
+				break;
 			case Wild:
 				SDL_RenderCopy(r, wld_tx, NULL, &draw_rect);
+				break;
+			case Door:
+				SDL_RenderCopy(r, dor_tx, NULL, &draw_rect);
 				break;
 			default:
 				throw("No valid tile passed");
@@ -238,6 +383,9 @@ void Mapping::map_render(SDL_Renderer* r)
 			}
 		}
 	}
+	//render and place items
+	render_non_players(r);
+
 	//render the player sprite
 	render_ex(r, sprite_tx, &src_sprite_rect, &sprite_rect, flipper);
 }
@@ -379,7 +527,17 @@ void Mapping::move_sprite_lr(bool leftward)
 		//if (sprite_rect.x <= screenWidth - tile_size)
 			sprite_rect.x += tile_size;
 
-	std::cout << sprite_rect.x << std::endl;
+}
+
+void Mapping::move_sprite_ud(bool upward)
+{
+	if (upward)
+		//if(sprite_rect.x >= tile_size)
+		sprite_rect.y -= tile_size;
+	else
+		//if (sprite_rect.x <= screenWidth - tile_size)
+		sprite_rect.y += tile_size;
+
 }
 
 
@@ -388,7 +546,7 @@ void Mapping::move_sprite_lr(bool leftward)
 void Mapping::SaveMap()
 {
 	//create a text file with the name of this string
-	std::ofstream map_save("savedat/mapsave.mp");
+	std::ofstream map_save("SaveData/mapsave.mp");
 	//give it a title
 	map_save << "MAP" << std::endl;
 	//loop through every element in mTiles
@@ -449,6 +607,14 @@ void Mapping::ReadMap()
 				break;
 			case '2':
 				mTiles[i][j] = Block;
+				j++;
+				break;
+			case '3':
+				mTiles[i][j] = Door;
+				j++;
+				break;
+			case '4':
+				mTiles[i][j] = Event;
 				j++;
 				break;
 			default:

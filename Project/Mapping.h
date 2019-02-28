@@ -8,7 +8,6 @@ enum TileType //All the possible tiles should be listed here
 	Empty,
 	Wild,
 	Block,
-	OneWay,
 	Door,
 	Event
 };
@@ -20,17 +19,46 @@ class Mapping
 	SDL_Texture* emp_tx;
 	SDL_Texture* blk_tx;
 	SDL_Texture* wld_tx;
+	SDL_Texture* dor_tx;
+	SDL_Texture* pnk_tx;
 
 	//player sprite rectangle and textures
 	SDL_Texture* sprite_tx;
 	SDL_Rect sprite_rect;
 	SDL_Rect src_sprite_rect;
 
+	//player sprite rectangle and textures
+	SDL_Texture* ntr_tx;
+	
+
 	//Stores all the tiles  in the scene
 	std::vector<std::vector<TileType>> mTiles;
 
 	//secondarry map storage
 	std::vector<std::vector<TileType>> storage;
+	
+	//subclass for keeping track of items on map
+	struct Item_Coords{
+		Item_Coords(int _x, int _y, int _id, SDL_Texture* _tx) {
+			ix = _x;
+			iy = _y;
+			iid = _id;
+			itx = _tx;
+		}
+		Item_Coords(){//clear the memory
+			SDL_DestroyTexture(itx);
+		}
+		int ix;
+		int iy;
+		int iid;
+		SDL_Texture* itx;
+		SDL_Rect irect;
+		SDL_Rect src_ntr_rect;
+	};
+	//keep a vec with coords and item id and textures in separate vec
+	//! try to consolidate the separate vecs into one
+	std::vector<Item_Coords> non_trainer_coords;
+
 
 	//bools for which direction the player has been moving
 	bool moving_up, moving_down, moving_left, moving_right;
@@ -67,9 +95,18 @@ public:
 	void move_row_offscreen(bool upward);
 	void move_column_offscreen(bool leftward);
 	void move_sprite_lr(bool leftward);
+	void move_sprite_ud(bool upward);
 	void SaveMap();
 	void ReadMap();
-	void Form_Initial_Map();
+	void Form_Initial_Map( SDL_Renderer* r);
+
+	void place_door();
+
+	void place_trainers();
+
+	void place_items(int row, int col, SDL_Renderer* r);
+
+	void render_non_players(SDL_Renderer* r);
 
 	void animate_player_help(int w, int h, int offsetX, int offsetY, int frames, int row, int column, int sprites_in_row, int delay);
 	void render_ex(SDL_Renderer* r, SDL_Texture* tx, SDL_Rect* src, SDL_Rect* dest, SDL_RendererFlip flip = SDL_FLIP_NONE, double angle = 0.0, SDL_Point* center = NULL);

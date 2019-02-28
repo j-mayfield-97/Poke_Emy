@@ -1,5 +1,13 @@
 #include "Combatant.h"
 #include <time.h>
+#include <rapidjson/document.h>
+#include <rapidjson/writer.h>
+#include <rapidjson/stringbuffer.h>
+#include <rapidjson/istreamwrapper.h>
+#include <rapidjson/ostreamwrapper.h>
+#include <fstream> 
+#include <string.h>
+#include <string>
 
 
 Combatant::Combatant()
@@ -12,6 +20,41 @@ Combatant::Combatant(const char * _name, int att, int def, int _health)
 	attack = att;
 	defense = def;
 	hp = max_health = _health;
+	alive = true;
+}
+
+Combatant::Combatant(const char* file_name)
+{
+	//concat the trainer name into the save file name
+	std::string path_prefix = "SaveData/";
+	std::string extension = ".json";
+
+	std::string truepath = path_prefix + file_name + extension;
+
+	//read
+	std::ifstream ifs(truepath);
+	rapidjson::IStreamWrapper isw(ifs);
+	rapidjson::Document doc;
+	doc.ParseStream(isw);
+	ifs.close();
+
+	//access members then read them
+	//and set the object to the values read
+	rapidjson::Value& val_name = doc["Name"];
+	this->name = val_name.GetString();
+
+	rapidjson::Value& val_att = doc["Attack"];
+	this->attack = val_att.GetInt();
+
+	rapidjson::Value& val_def = doc["Defense"];
+	this->defense = val_def.GetInt();
+
+	rapidjson::Value& val_hpt = doc["HpTotal"];
+	this->max_health = val_hpt.GetInt();
+
+	rapidjson::Value& val_hp = doc["Hp"];
+	this->hp = val_hp.GetInt();
+
 	alive = true;
 }
 
@@ -45,21 +88,21 @@ void Combatant::basic_attack(Combatant* actor, Combatant* com, int stat)
 {
 	int damage = std::ceil((actor->attack) / com->defense);
 	com->hp = com->hp - damage;
-	std::cout << actor->name << " hit "<< com->name <<" for " << damage << std::endl;
-	std::cout << com->name << " current health is " << com->hp << std::endl;
+	std::cout << /*actor->name << */ " hit "<< /*com->name << */ " for " << damage << std::endl;
+	std::cout << /*com->name <<*/ " current health is " << com->hp << std::endl;
 }
 
 void Combatant::basic_defense(Combatant* actor, Combatant* com, int stat)
 {
 	int d = std::ceil( actor->defense / 10);
 	com->defense += d;
-	std::cout << actor->name << " raised defense " << com->hp << std::endl;
+	std::cout << /*actor->name <<*/ " raised defense " << com->hp << std::endl;
 }
 
 void Combatant::lick_wounds(Combatant* actor, Combatant* com, int stat)
 {
 	com->hp += (actor->defense / 20);
-	std::cout << actor->name << " licked "<< com->name << "'s wounds. Thier hp is" << com->hp << " out of "<<  com->max_health << std::endl;
+	std::cout << /*actor->name << */ " licked "<< /*com->name << */ "'s wounds. Thier hp is" << com->hp << " out of "<<  com->max_health << std::endl;
 }
 
 void Combatant::learnMoves(Moves mov)
@@ -82,7 +125,7 @@ void Combatant::set_opponent(Combatant* target)
 	else
 		opponent = target;
 
-	std::cout << "opponent is now " << target->name << std::endl;
+	std::cout << "opponent is now " << "NAME" << std::endl;
 }
 
 Combatant* Combatant::get_opponent()
@@ -102,11 +145,11 @@ bool Combatant::alive_check()
 	if (hp < 0)
 	{
 		alive = false;
-		std::cout << name << " died, they can't act" << std::endl;
+		std::cout << "NAME" << " died, they can't act" << std::endl;
 		return alive;
 	}
 	else
-		std::cout << name << " still alive." << std::endl;
+		std::cout << "NAME" << " still alive." << std::endl;
 	return alive;
 }
 

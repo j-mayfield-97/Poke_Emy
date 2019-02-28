@@ -22,20 +22,22 @@ Controller::Controller(SDL_Renderer* r)
 	//instanciate the map
 	main_map = new Mapping(r); 
 	//make the first map
-	main_map->Form_Initial_Map();
+	main_map->Form_Initial_Map(r);
 	//initial draw of the player
 	main_map->animate_player_help(20, 32, 2, 2, 3, 0, 0, 10, move_delay);
 
 	//instance player
-	player = new Trainer("trainer_player", 3, 5, 20);
+	//player = new Trainer("trainer_player", 3, 5, 20);
 
+	//Trainer* opp = new Trainer("trainer_opp", 4, 8, 30);
+	player = new Trainer("Trainer/trainer_player");
+	Trainer* opp = new Trainer("Trainer/trainer_opp");
 
-	Trainer* opp = new Trainer("trainer_opp", 4, 8, 30);
 	player->set_opponent(opp);
 
 	//reads to overwrite the test_setup stats
-	player->read_stats();
-	player->get_opponent()->read_stats();
+	//player->read_stats();
+	//player->get_opponent()->read_stats();
 }
 
 //currently useless but the format of this function is useful
@@ -127,7 +129,7 @@ void Controller::main_game_controller(SDL_Renderer* r)
 		if (currentKeyStates[SDL_SCANCODE_W] && can_move && !main_map->up_obsticle)
 		{
 			//upward run animation
-			main_map->move_row_offscreen(true);
+			main_map->move_sprite_ud(true);
 			main_map->animate_player_help(20, 32, 3, -1, 3, 1, 6, 10, move_delay);
 
 			can_move = false;
@@ -135,7 +137,7 @@ void Controller::main_game_controller(SDL_Renderer* r)
 		if (currentKeyStates[SDL_SCANCODE_S] && can_move && !main_map->dwn_obsticle)
 		{
 			//downward run animation
-			main_map->move_row_offscreen(false);
+			main_map->move_sprite_ud(false);
 			main_map->animate_player_help(20, 32, 2, -1, 3, 1, 0, 10, move_delay);
 
 			can_move = false;
@@ -149,15 +151,12 @@ void Controller::main_game_controller(SDL_Renderer* r)
 			//reset to standard delay
 			move_delay = 300;
 			//give the illsuion of movement by moving the map
-			main_map->move_row_offscreen(true);
+			main_map->move_sprite_ud(true);
 			//up facing animation
 			main_map->animate_player_help(20, 32, 2, 2, 3, 0, 6, 10, move_delay);
 
 			//prevent movemnt until the delay time has passed
 			can_move = false;
-
-			//positive direction then increase
-			player->one_direction++;
 		}
 		//walk down
 		else if (currentKeyStates[SDL_SCANCODE_S] && can_move && !main_map->dwn_obsticle)
@@ -165,13 +164,10 @@ void Controller::main_game_controller(SDL_Renderer* r)
 			//reset to standard delay
 			move_delay = 300;
 			//downward facing animation
-			main_map->move_row_offscreen(false);
+			main_map->move_sprite_ud(false);
 			main_map->animate_player_help(20, 32, 2, 2, 3, 0, 0, 10, move_delay);
 
 			can_move = false;
-
-			//negative direction then decrease
-			player->one_direction--;
 		}
 		//walk left
 		else if (currentKeyStates[SDL_SCANCODE_A] && can_move && !main_map->lft_obsticle)
@@ -199,20 +195,23 @@ void Controller::main_game_controller(SDL_Renderer* r)
 		}
 	}
 	//save map only for testing purposes
-	if (currentKeyStates[SDL_SCANCODE_TAB])
+	if (currentKeyStates[SDL_SCANCODE_TAB] && can_move)
 	{
 		main_map->SaveMap();
 	}
 	//load the map that was last saved
-	if (currentKeyStates[SDL_SCANCODE_INSERT])
+	if (currentKeyStates[SDL_SCANCODE_INSERT] && can_move)
 	{
-		//since this function takes long, might as well put up a loading sceen
-		//SDL_Texture* loader_tx = IMG_LoadTexture(r, "assets/player2.png");
-		//SDL_RenderCopy(r, loader_tx, NULL, NULL);
-		//SDL_RenderPresent(r);
-		//sometimes it runs faster and one does not need to load for long
 		main_map->ReadMap();
 	}
+
+	if (main_map->collision_player() == Door && currentKeyStates[SDL_SCANCODE_Z] && can_move)
+	{
+		main_map->Form_Initial_Map(r);
+		player->floors += 1;
+		std::cout << "floors : " << player->floors << std::endl;
+	}
+
 	//need a condition so that the player can move only every delay milliseconds
 	//signed and unsigned mismatch!
 	if (SDL_GetTicks() - ticker > move_delay)
@@ -225,11 +224,6 @@ void Controller::main_game_controller(SDL_Renderer* r)
 	main_map->map_render(r);
 	//check player collisions here
 
-
-	if (main_map->collision_player() == Wild)
-	{
-		//random_encouter();
-	}
 
 	//temp battle starter for testing
 	if (currentKeyStates[SDL_SCANCODE_B])
