@@ -40,7 +40,6 @@ Mapping::Mapping(SDL_Renderer* r)
 	left_right_movement = 0;
 
 	//init textures
-	//I'll need  function to cut through the new sprite sheets
 	emp_tx = IMG_LoadTexture(r, "assets/wall32.png");
 	blk_tx = IMG_LoadTexture(r, "assets/water32.png");
 	wld_tx = IMG_LoadTexture(r, "assets/dirt32.png");
@@ -125,6 +124,24 @@ TileType Mapping::collision_player()
 	return mTiles[sprite_row][sprite_column];
 }
 
+//return the items to be added to trainer
+//despawn them by erasing them from vector
+Items* Mapping::item_collision()
+{
+	Items* item_c = nullptr;
+
+	//loop through item vec then have the object that shares the players rect be erased
+	for (int i = 0; i < items_vec.size(); i++)
+	{
+		if (items_vec[i]->irect.x == sprite_rect.x && items_vec[i]->irect.y == sprite_rect.y)
+		{
+			item_c = items_vec[i];
+			items_vec.erase(items_vec.begin() + i); 
+		}
+	}
+	return item_c;
+}
+
 bool immeadiate_collsion()
 {
 	SDL_assert("nope not ready yet");
@@ -152,50 +169,111 @@ void Mapping::place_trainers()
 {
 }
 
+//this fuctionos gunna get very large, consider moving it
 void Mapping::place_items(int row, int col, SDL_Renderer* r)
 {
 	//to be replaced by an item enum
-	int item_id = -1;
-	//get a rand in to decide which items are placed
-
+	//iEmpty is used to hold space on the overworld
+	ItemType item_id = iEmpty;
+	
+	//get a rand in to decide which items are placed and loaded
 	//texture to be added to vec
 	SDL_Texture* _tx;
 	const char* path = "";
 
-	int rand_int = rand() % 100;
+	bool animation = false;
+
+	//constants for animation to be assigned in if statements
+	int w = -1;
+	int h = -1;
+	int offsetX = -1;
+	int offsetY = -1;
+	int frames = -1;
+	int roww = -1;
+	int column = -1;
+	int sprites_in_row = -1;
+	int delay = -1;
+	int c_val = 0;
+
+	int rand_int = rand() % 150;
 	if (rand_int < 30)
 	{
-		item_id = 0;
+		item_id = iMon;
 		path = "assets/floggy.png";
 	}
-	if (rand_int >= 50)
+	if (rand_int >= 50 && rand_int < 100)
 	{
-		item_id = 1;
+		item_id = iHeld;
 		path = "assets/ball.png";
+	}
+	if (rand_int >= 100 && rand_int < 120)
+	{
+		item_id = iCoin;
+		path = "assets/coin_sacio.png";
+
+		//coin value between 1 and 21 
+		c_val = rand_int - 99;
+
+		 w = 16;
+		 h = 16;
+		 offsetX = 0;
+		 offsetY = 0;
+		 frames = 12;
+		 roww = 0;
+		 column = 0;
+		 sprites_in_row = 12;
+		 delay = 100;
+
+		 animation = true;
+	}
+	if (rand_int >= 120 && rand_int < 150)
+	{
+		item_id = iLife;
+		path = "assets/sSoul_patvanmackelberg.png";
+		w = 16;
+		h = 16;
+		offsetX = 0;
+		offsetY = 0;
+		frames = 4;
+		roww = 0;
+		column = 0;
+		sprites_in_row = 4;
+		delay = 100;
+
+		animation = true;
 	}
 
 	_tx = IMG_LoadTexture(r, path);
 	//create item obj to be pushed to vec
-	Item_Coords item_c = Item_Coords(row, col, item_id, _tx);
-	//get the width and height from sprite the x,y will be filled in loop
-	item_c.irect = sprite_rect;
-	non_trainer_coords.push_back(item_c);	
+	Items* item_c = new Items(row, col, item_id, _tx);
+
+	//set constants for animations if its an animation
+	if(animation)
+		item_c->Set_Animation_Constants( w,  h,  offsetX,  offsetY,  frames,  roww,  column,  sprites_in_row,  delay);
+	//get the width and height from sprite the x,y will be filled in render loop
+	item_c->irect = sprite_rect;
+	//set coin value
+	item_c->value = c_val;
+	//push
+	items_vec.push_back(item_c);	
 }
 
 //the form of theis function is non optimal
 //decouple render and placement 
 // form a vetor of items
 //change the intial mapping loops to get the places of events 
-void Mapping::render_non_players(SDL_Renderer* r)
+void Mapping::render_items(SDL_Renderer* r)
 {
 	//loop through vec placing the rect at the coords and use the same index to get the texture for rendering
-	for (auto item_c : non_trainer_coords)
+	for (auto item_c : items_vec)
 	{
-		
-		item_c.irect.x = item_c.ix * tile_size;
-		item_c.irect.y = item_c.iy * tile_size;
+		item_c->irect.x = item_c->ix * tile_size;
+		item_c->irect.y = item_c->iy * tile_size;
 
-		SDL_RenderCopy(r, item_c.itx, NULL, &item_c.irect);
+		if (item_c->constants_set)
+			item_c->animate_help(r);
+		else
+			item_c->simple_render(r);
 	}
 }
 
@@ -206,7 +284,7 @@ void Mapping::Form_Initial_Map( SDL_Renderer* r)
 {
 	//clear previous map
 	mTiles.clear();
-	non_trainer_coords.clear();
+	items_vec.clear();
 	//interator i is how many tiles that will be needed in a single column
 	//this should be a constant
 	int col_size = screenHeight / tile_size;
@@ -218,6 +296,7 @@ void Mapping::Form_Initial_Map( SDL_Renderer* r)
 	//random int to decide what goes in tiles 
 	int random_int;
 
+	//tile to be pushed to row vector
 	TileType to_push;
 
 	//column array to keep tiles
@@ -246,12 +325,12 @@ void Mapping::Form_Initial_Map( SDL_Renderer* r)
 			//percent ranges determine what tile gets pushed to the row vector
 			if (random_int > 50 && random_int <= 65)
 				to_push = Block;
-			if (random_int > 60 && random_int <= 65  /*embrace the bugs && !( col_index == 0 || row_index == -1 || col_index == col_size-1 || row_index == row_size-1)*/)
+			if (random_int > 60 && random_int <= 75  /*embrace the bugs && !( col_index == 0 || row_index == -1 || col_index == col_size-1 || row_index == row_size-1)*/)
 			{
 				to_push = Event;
 				place_items(row_index + 1, col_index, r);
 			}
-			if (random_int > 65)
+			if (random_int > 75)
 				to_push = Wild;
 			row.push_back(to_push);
 		}
@@ -278,42 +357,14 @@ void Mapping::Form_Initial_Map( SDL_Renderer* r)
 	place_door();
 }
 
-
-/*
-void prevent_blocked()
-{
-
-	//prevent the player from being blocked in by wall tiles
-	int sprite_row = sprite_rect.y / tile_size;
-	int sprite_column = sprite_rect.x / tile_size;
-
-	if (Block == collision_up())
-	{
-		mTiles[sprite_row - 1][sprite_column] = Empty;
-	}
-	if (Block == collision_down())
-	{
-		mTiles[sprite_row + 1][sprite_column] = Empty;
-
-	}
-	if (Block == collision_left())
-	{
-		mTiles[sprite_row][sprite_column - 1] = Empty;
-	}
-	if (Block == collision_right())
-	{
-		mTiles[sprite_row][sprite_column + 1] = Empty;
-	}
-}
-*/
-//move thorugh sprite sheet to give the illusion of animations
+//move thorugh sprite sheet to give the illusion of animations only to the player trainer
 void Mapping::animate_player_help(int w, int h, int offsetX, int offsetY, int frames, int row, int column, int sprites_in_row, int delay)
 {
-	//w and h are size of sprites on the sheet
-	//offsets from topleft and right
+	//w and h are size of sprites on the sheet in pixels
+	//offsets from topleft in pixels
 	//frames is how many frames will be in animation
-	//row column are where the animation starts i.e. 0th row, 5th column
-	//sprites in row is how many sprites are in the row
+	//row column are where the animation starts i.e. 0th row, 5th column 
+	//sprites in row is how many sprites are in the row 
 	//and delay is how long the animations will play
 
 	src_sprite_rect.y = (row * h) + offsetY ;
@@ -334,6 +385,8 @@ void Mapping::animate_player_help(int w, int h, int offsetX, int offsetY, int fr
 	else
 		src_sprite_rect.x = (frame + column) * src_sprite_rect.w + offsetX;
 }
+
+
 
 void Mapping::render_ex(SDL_Renderer* r, SDL_Texture* tx, SDL_Rect* src, SDL_Rect* dest, SDL_RendererFlip flip, double angle, SDL_Point* center)
 {//Function just to add easy defaults to rendercopyEx 
@@ -384,7 +437,7 @@ void Mapping::map_render(SDL_Renderer* r)
 		}
 	}
 	//render and place items
-	render_non_players(r);
+	render_items(r);
 
 	//render the player sprite
 	render_ex(r, sprite_tx, &src_sprite_rect, &sprite_rect, flipper);
@@ -539,8 +592,6 @@ void Mapping::move_sprite_ud(bool upward)
 		sprite_rect.y += tile_size;
 
 }
-
-
 
 //function to save map to close game and open it later
 void Mapping::SaveMap()

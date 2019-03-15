@@ -23,21 +23,18 @@ Controller::Controller(SDL_Renderer* r)
 	main_map = new Mapping(r); 
 	//make the first map
 	main_map->Form_Initial_Map(r);
-	//initial draw of the player
+	//initial draw of the row_size
 	main_map->animate_player_help(20, 32, 2, 2, 3, 0, 0, 10, move_delay);
 
-	//instance player
-	//player = new Trainer("trainer_player", 3, 5, 20);
+	//instance row_size
+	//row_size = new Trainer("trainer_row_size", 3, 5, 20);
 
 	//Trainer* opp = new Trainer("trainer_opp", 4, 8, 30);
 	player = new Trainer("Trainer/trainer_player");
 	Trainer* opp = new Trainer("Trainer/trainer_opp");
 
-	player->set_opponent(opp);
-
-	//reads to overwrite the test_setup stats
-	//player->read_stats();
-	//player->get_opponent()->read_stats();
+	player->set_current_target(opp);
+	player->opponent_t = opp;
 }
 
 //currently useless but the format of this function is useful
@@ -92,7 +89,7 @@ void Controller::test_setup()
 	opp->add_mon(oppmon2);
 	opp->add_mon(oppmon3);
 
-	player->set_opponent(opp);
+	player->set_current_target(opp);
 	player->opponent_t = opp;
 }
 
@@ -119,7 +116,6 @@ void Controller::main_game_controller(SDL_Renderer* r)
 			running = false;
 		}
 	}
-	
 
 	//run on left shift in all directions
 	if (currentKeyStates[SDL_SCANCODE_LSHIFT] )
@@ -205,24 +201,33 @@ void Controller::main_game_controller(SDL_Renderer* r)
 		main_map->ReadMap();
 	}
 
+	//test code to continue through floors
 	if (main_map->collision_player() == Door && currentKeyStates[SDL_SCANCODE_Z] && can_move)
 	{
 		main_map->Form_Initial_Map(r);
-		player->floors += 1;
-		std::cout << "floors : " << player->floors << std::endl;
+		std::cout << "floors : " << player->increment_floor(1) << std::endl;
+	}
+	//if the row_size hits x over an item pick it up
+	//push to item vec and despawn from map
+	if (currentKeyStates[SDL_SCANCODE_X] && can_move)
+	{
+		Items* item = main_map->item_collision();
+		if(item != nullptr)
+			player->add_item(item);
+		delete item;
 	}
 
-	//need a condition so that the player can move only every delay milliseconds
+	//need a condition so that the row_size can move only every delay milliseconds
 	//signed and unsigned mismatch!
 	if (SDL_GetTicks() - ticker > move_delay)
 	{
-		//if enough time has passed player can move and the time changes
+		//if enough time has passed row_size can move and the time changes
 		can_move = true;
 		ticker = SDL_GetTicks();
 	}
 	//map rendereing happens here
 	main_map->map_render(r);
-	//check player collisions here
+	//check row_size collisions here
 
 
 	//temp battle starter for testing
@@ -232,24 +237,26 @@ void Controller::main_game_controller(SDL_Renderer* r)
 		//but it works for now
 		player->battling = true;
 		battle_controls(r);
-
 	}
 }
 
 //menu function to be implemnted
-void Controller::menu_controls()
+void Controller::menu_controls(SDL_Renderer* r)
 {
+	menuing = false;
 }
 
-//controls for battles
+//type def for returning battle action functions
+void(*player_ability)(Combatant*, Combatant*, int);
+//gui and controls for battles includes mouse and keyboard controls
 void Controller::battle_controls(SDL_Renderer* r)
 {
-	//do i want mouse controls or not?
-	//enable crossing
-	//menu structure for battles
-	//should be able to 'switch' on current_rect* to compare to address of other rects for functionality
-	//if you add mouse functionality then put it in battle Struct and only pass the mouse ints and return bools
-	BattleStruct*  battleObj = new BattleStruct(r);
+	BattleStruct* battleObj = new BattleStruct(r);
+
+	//fill ui elements
+	battleObj->fill_mons_rect(player, r);
+	battleObj->fill_opponent_mons_rect(player->opponent_t, r);
+	battleObj->hp_affected(player, r);
 
 	//serves a similar function to can_move from main controls, limiting the speed of inputs
 	bool prevention = true;
@@ -257,10 +264,20 @@ void Controller::battle_controls(SDL_Renderer* r)
 	//temp test set up to be dleted later
 	//test_setup(); 
 
-	
+	//mouse cursor enable
+	SDL_ShowCursor(SDL_ENABLE);
+
+	SDL_Point mouse_point = SDL_Point();
+	int mouse_x = 0;
+	int mouse_y = 0;	
 
 	while (player->battling)
 	{
+		//find the mouse on the screen
+		SDL_GetMouseState(&mouse_x, &mouse_y);
+		mouse_point.x = mouse_x;
+		mouse_point.y = mouse_y;
+
 		if (prevention)
 		{
 			//clear the renderer here or somewhere else?
@@ -271,101 +288,199 @@ void Controller::battle_controls(SDL_Renderer* r)
 
 			while (SDL_PollEvent(&e) != 0)
 			{
+				//end battle on window close or esc key
 				if (e.type == SDL_QUIT || currentKeyStates[SDL_SCANCODE_ESCAPE])
 				{
 					player->battling = false;
 				}
-			}
+				//mouse controls
+				if (e.type == SDL_MOUSEMOTION || e.type == SDL_MOUSEBUTTONUP)
+				{
+					//current ect becomes the selectable rect that the cursor is in
+					battleObj->currentRect = battleObj->mouse_helper(mouse_point);
 
+					if (e.type == SDL_MOUSEBUTTONUP)
+					{
+						//end turn play all queued actions
+						if (battleObj->currentRect == &battleObj->end_turn_rect)
+						{
+							battleObj->play_q();
+							battleObj->hp_affected(player, r);
+							prevention = false;
+						}
+						//enter the options menu
+						if(battleObj->currentRect == &battleObj->options_rect)
+						{
+							menuing = true;
+							menu_controls(r);
+							prevention = false;
+						}
+						//pop the last action added to queue
+						if (battleObj->currentRect == &battleObj->undo_rect)
+						{
+							battleObj->undo_q();
+							prevention = false;
+						}
+						//quit closes the game
+						if (battleObj->currentRect == &battleObj->quit_save_rect)
+						{
+							player->battling = false;
+							running = false;
+							prevention = false;
+						}
+						//first opp as target
+						if (battleObj->currentRect == &battleObj->first_opp_m.sprite_rect)
+						{
+							player->selected_target = player->opponent_t->mons[0];
+							battleObj->currentTargetRect = &battleObj->first_opp_m.sprite_rect;
+							prevention = false;
+						}
+						//second opp as target
+						if (battleObj->currentRect == &battleObj->second_opp_m.sprite_rect)
+						{
+							player->selected_target = player->opponent_t->mons[1];
+							battleObj->currentTargetRect = &battleObj->second_opp_m.sprite_rect;
+							prevention = false;
+						}
+						//thrid opp as target
+						if (battleObj->currentRect == &battleObj->third_opp_m.sprite_rect)
+						{
+							player->selected_target = player->opponent_t->mons[2];
+							battleObj->currentTargetRect = &battleObj->third_opp_m.sprite_rect;
+							prevention = false;
+						}
+						//opp as target
+						if (battleObj->currentRect == &battleObj->opponent_sprite_rect)
+						{
+							player->selected_target = player->opponent_t;
+							battleObj->currentTargetRect = &battleObj->opponent_sprite_rect;
+							prevention = false;
+						}
+						//first mon top ability
+						if (battleObj->currentRect == &battleObj->first_m.top_move_rect)
+						{
+							battleObj->push_to_q(&Combatant::basic_attack, player->mons[0], player->selected_target, 10);
+							battleObj->fill_queue_rect("assets/Xtxt.png", r);
+							prevention = false;
+						}
+						//first mon bottom ability
+						if (battleObj->currentRect == &battleObj->first_m.bottom_move_rect)
+						{
+							battleObj->push_to_q(&Combatant::lick_wounds, player->mons[0], player->mons[0], 10);
+							battleObj->fill_queue_rect("assets/Ytxt.png", r);
+							prevention = false;
+						}
+						//second mon top ability
+						if (battleObj->currentRect == &battleObj->second_m.top_move_rect)
+						{
+							battleObj->push_to_q(&Combatant::basic_attack, player->mons[1], player->selected_target, 10);
+							battleObj->fill_queue_rect("assets/Xtxt.png", r);
+							prevention = false;
+						}
+						//second mon bottom ability
+						if (battleObj->currentRect == &battleObj->second_m.bottom_move_rect)
+						{
+							battleObj->push_to_q(&Combatant::lick_wounds, player->mons[1], player->mons[1], 10);
+							battleObj->fill_queue_rect("assets/Ytxt.png", r);
+							prevention = false;
+						}
+						//third mon top ability
+						if (battleObj->currentRect == &battleObj->third_m.top_move_rect)
+						{
+							battleObj->push_to_q(&Combatant::basic_attack, player->mons[2], player->selected_target, 10);
+							battleObj->fill_queue_rect("assets/Xtxt.png", r);
+							prevention = false;
+						}
+						//third mon bottom ability
+						if (battleObj->currentRect == &battleObj->third_m.bottom_move_rect)
+						{
+							battleObj->push_to_q(&Combatant::lick_wounds, player->mons[2], player->mons[2], 10);
+							battleObj->fill_queue_rect("assets/Ytxt.png", r);
+							prevention = false;
+						}
+						//player ability 1
+						if (battleObj->currentRect == &battleObj->third_m.bottom_move_rect)
+						{
+							player_ability = &Combatant::lick_wounds;
+							//figure out a way to return the ability function
+							battleObj->push_to_q(player_ability, player, player->selected_target, 10);
+							battleObj->fill_queue_rect("assets/Ytxt.png", r);
+							prevention = false;
+						}
+					}
+				}
+			}
+			//undo last action on z key
 			if (currentKeyStates[SDL_SCANCODE_Z])
 			{
-				//select above
 				battleObj->undo_q();
-				//reset to standard delay
 				prevention = false;
 			}
-
 			//wasd controls for navagating the menu
 			if (currentKeyStates[SDL_SCANCODE_W])
 			{
 				//select above
 				battleObj->currentRect = battleObj->closest_up();
-				//reset to standard delay
 				prevention = false;
 			}
 			if (currentKeyStates[SDL_SCANCODE_A])
 			{
 				//select left by changing what the current rect is
 				battleObj->currentRect = battleObj->closest_left();
-
 				prevention = false;
 			}
 			if (currentKeyStates[SDL_SCANCODE_D])
 			{
 				//select right
 				battleObj->currentRect = battleObj->closest_right();
-				//reset to standard delay
 				prevention = false;
 			}
 			if (currentKeyStates[SDL_SCANCODE_S])
 			{
 				//select below
 				battleObj->currentRect = battleObj->closest_down();
-				//reset to standard delay
 				prevention = false;
 			}
+			//space key to collect current rect
 			if (currentKeyStates[SDL_SCANCODE_SPACE])
 			{
 				//select will be a group of if statements that run if current rect has the correct address in it
 				//currently this block is just testing anyfunction that needs testing
-				//testing quit function
-				if (battleObj->currentRect == &battleObj->quit)
+				//end turn 
+				if (battleObj->currentRect == &battleObj->end_turn_rect)
 				{
-					//triggers quiting battle screen
-					//player->battling = false;
-					//should pass player stat instead of constant
 					battleObj->play_q();
 					prevention = false;
 				}
-				if (battleObj->currentRect == &battleObj->bot)
+				//items 
+				if (battleObj->currentRect == &battleObj->items_rect)
 				{
-					//print stats write to the trainer and the mons jsons
-					//player->print_stats();
-					//player->opponent_t->print_stats();
-					/////////////////////
-					/// if the actions were not members of classes then i could access their address directly
-					///that kinda defeats the spirit of oop though
-					battleObj->push_to_q(&Combatant::basic_attack, player, player->get_opponent(), 10);
 					prevention = false;
-					std::cout << "bot\n";
 				}
-				if (battleObj->currentRect == &battleObj->player)
+				//options menu
+				if (battleObj->currentRect == &battleObj->options_rect)
 				{
-					battleObj->push_to_q(&Combatant::basic_defense, player, player->mon_returner(), 30);
-					player->mon_cycler();
+					menuing = true;
+					menu_controls(r);
 					prevention = false;
-					std::cout << "player\n";
-				}
-				if (battleObj->currentRect == &battleObj->opt)
-				{
-					//player->make_catchable(player->mons[0]);
-					//player->set_opponent(player->opponent_t->mon_returner());
-					//player->attack_creature(player->move_list[0]);
-					battleObj->push_to_front(&Combatant::lick_wounds, player, player, 40);
-					prevention = false;
-					std::cout << "opt\n";
 				}
 			}
 		}
 
 		if (SDL_GetTicks() - ticker > move_delay)
 		{
-			//if enough time has passed player can move and the tick updates
+			//if enough time has passed row_size can move and the tick updates
 			prevention = true;
 			ticker = SDL_GetTicks();
 		}
+		//if opponent faints play win animation and fade to overworld
+		//if (!player->get_opponent()->alive_check())
+		{
+		//	player->battling = false;
+		}
 		
 		battleObj->ren_copies(r);
+		battleObj->mon_render(player, player->opponent_t, r);
 		SDL_RenderPresent(r);
 		SDL_RenderClear(r);
 	}
@@ -373,4 +488,5 @@ void Controller::battle_controls(SDL_Renderer* r)
 	battleObj->texture_wipe();
 	delete battleObj;
 	//disable cursor
+	SDL_ShowCursor(SDL_DISABLE);
 }

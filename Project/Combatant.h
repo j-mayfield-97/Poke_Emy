@@ -9,6 +9,7 @@ class Combatant
 public:
 	Combatant();
 	Combatant(const char* _name, int att, int def, int _health);
+	Combatant(const char* file_name);
 	~Combatant();
 
 	static void basic_attack(Combatant* actor, Combatant* com, int stat);
@@ -20,7 +21,8 @@ public:
 	void learnMoves(Moves mov);
 
 	//make all set_ virtual
-	void set_opponent(Combatant* target);
+	//rewrite these to target 
+	void set_current_target(Combatant* target);
 	Combatant* get_opponent();
 
 	bool alive_check();
@@ -34,15 +36,23 @@ public:
 	//this needs to be private later
 	std::vector<Moves> move_list;
 
-	// Pure Virtual Function 
+	// Pure Virtual Functions
 	//defined in mons and trainer
 	virtual void write_stats() = 0;
 	virtual void read_stats() = 0;
 
 	const char* outBattlePath = "EMPTY.PNG";
-	const char* inBattlePath = "EMPTY.PNG";
+	//temp testing sprite path
+	const char* inBattlePath = "assets/ufoo.png";
+	const char* name_get();
+	const char* health_string();
+
+	int get_hp();
+	int get_max_hp();
 
 protected:
+
+	std::string _help_name;
 
 	const char* name;
 	bool alive;
@@ -56,8 +66,8 @@ protected:
 	//for now rand int for id
 	int call_ID;
 
-	//Mon* monsters[3];
 	Combatant* opponent;
-	
+
+	void(*moves_returner(int index))(Combatant*, Combatant*, int);	
 };
 

@@ -11,11 +11,6 @@
 /*
 TODO
 
-I'm having trouble articulating this search but would it be 
-- possible for a friend class to have access to the inherited members of a derived class?
-
-fix map obstacle logic
-get battles functional - battle queue
 battle menu ui
 set up mons/moves/effects with the json parser
 change all the console messages into SDL text ingame
@@ -23,20 +18,26 @@ other trainers
 other trainers ai
 items and item shops
 restructure code to be more elegant
-go through all your notes
+go through all your notes /clean up old notes and comments
 time-stamp mons so they have unique id's
-make the games Room based instead of infinite directions
 set up what a turn is
 error handling - json schemas and validation
 random int / timestamped ID for identifiying mons, instead of using name strings .. possibly uuid from lua
 std::set might help runtime instead of using std::vector
-keep a list of all tags that have been used in order to 
-*/
+keep a list of all tags that have been used in order to make unique tags
+clean 
+make vectors ordered list to speed up searches
 
-/*
-known bugs
+FIXED
+fix map obstacle logic
+get battles functional - battle queue
+make the games Room based instead of infinite directions
 large strange printing of lines to the console
-YYYYYYYYYYYYYY in the Name element of Mons 
+YYYYYYYYYYYYYY in the Name element of Mons
+
+
+PRESSING BUGS
+
 
 Ideas
 
@@ -60,11 +61,10 @@ smile heals everyone around you
 grin frightens opponent (wont be targeted this turn)
 HMs useable in rooms
 puzzle rooms???
-no healing in between battles
+no healing in between battles /unless bought or found item
 types could be reduced to sharp, blunt, heal
 */
-/*
-*/
+
 SDL_Renderer* ren;
 SDL_Window* win;
 GameMan* gam;

@@ -1,4 +1,6 @@
 #pragma once
+#include <SDL.h>
+#include <SDL_ttf.h>
 //keep the names of monsters in an Enum and have their values set on a switch.
 
 //window dimensions in pixels
@@ -7,6 +9,8 @@ const int screenHeight = 600;
 
 //size of square tiles in pixels
 const int tile_size = 50;
+
+
 /*
 enum Mon_Names
 {

@@ -23,6 +23,11 @@ Mon::Mon(int id)
 	name = "EMPTY";
 }
 
+Mon::Mon(const char* file_name) : Combatant(file_name)
+{
+	//needs moves in here
+}
+
 Mon::~Mon()
 {
 

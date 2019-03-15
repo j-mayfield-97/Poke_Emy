@@ -13,6 +13,7 @@ public:
 		Combatant(_name, att, def, _health) {
 		set_ID();
 	};
+	Mon(const char* file_name);
 	~Mon();
 
 	bool catch_mon();
@@ -26,6 +27,12 @@ public:
 	void read_stats(int id);
 	void printMoves();
 	void printStats();
+
+	//temp testing sprite path
+	const char* ability_path1 = "assets/ufoo.png";
+	const char* ability_path2 = "assets/ufoo.png";
+
+	
 protected:
 
 	int type1; //tags for type ie reg = 0 , love = 1

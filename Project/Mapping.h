@@ -1,6 +1,7 @@
 #pragma once
 #include <SDL.h>
 #include <vector>
+#include "Items.h"
 #include "Enum_Pokes.h"
 
 enum TileType //All the possible tiles should be listed here
@@ -23,6 +24,7 @@ class Mapping
 	SDL_Texture* pnk_tx;
 
 	//player sprite rectangle and textures
+	//!!these can be replaced by an Items instance now
 	SDL_Texture* sprite_tx;
 	SDL_Rect sprite_rect;
 	SDL_Rect src_sprite_rect;
@@ -37,27 +39,8 @@ class Mapping
 	//secondarry map storage
 	std::vector<std::vector<TileType>> storage;
 	
-	//subclass for keeping track of items on map
-	struct Item_Coords{
-		Item_Coords(int _x, int _y, int _id, SDL_Texture* _tx) {
-			ix = _x;
-			iy = _y;
-			iid = _id;
-			itx = _tx;
-		}
-		Item_Coords(){//clear the memory
-			SDL_DestroyTexture(itx);
-		}
-		int ix;
-		int iy;
-		int iid;
-		SDL_Texture* itx;
-		SDL_Rect irect;
-		SDL_Rect src_ntr_rect;
-	};
 	//keep a vec with coords and item id and textures in separate vec
-	//! try to consolidate the separate vecs into one
-	std::vector<Item_Coords> non_trainer_coords;
+	std::vector<Items*> items_vec;
 
 
 	//bools for which direction the player has been moving
@@ -88,6 +71,8 @@ public:
 	
 	TileType collision_player();
 
+	Items* item_collision();
+
 	//bools to block movement
 	bool up_obsticle, dwn_obsticle, lft_obsticle, rght_obsticle;
 
@@ -106,7 +91,7 @@ public:
 
 	void place_items(int row, int col, SDL_Renderer* r);
 
-	void render_non_players(SDL_Renderer* r);
+	void render_items(SDL_Renderer* r);
 
 	void animate_player_help(int w, int h, int offsetX, int offsetY, int frames, int row, int column, int sprites_in_row, int delay);
 	void render_ex(SDL_Renderer* r, SDL_Texture* tx, SDL_Rect* src, SDL_Rect* dest, SDL_RendererFlip flip = SDL_FLIP_NONE, double angle = 0.0, SDL_Point* center = NULL);

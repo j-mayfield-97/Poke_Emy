@@ -26,7 +26,7 @@ public:
 	//main controls for inputs
 	void main_game_controller(SDL_Renderer* r);
 	//menu controls
-	void menu_controls();
+	void menu_controls(SDL_Renderer* r);
 	//controls for battles
 	void battle_controls(SDL_Renderer* r);
 
